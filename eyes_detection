@@ -1,0 +1,51 @@
+import cv2
+import time
+
+leCascade = cv2.CascadeClassifier(r'C:\Users\Matthieu Gravejat\fichierXML\opencv-4.x\data\haarcascades\haarcascade_lefteye_2splits.xml')
+reCascade = cv2.CascadeClassifier(r'C:\Users\Matthieu Gravejat\fichierXML\opencv-4.x\data\haarcascades\haarcascade_righteye_2splits.xml')
+
+image = cv2.VideoCapture(0)
+
+
+last_eye_detection_time = time.time()
+no_eye_detection_timeout = 0.5
+
+while True:
+    check, frame = image.read()
+    gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+    bin = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
+
+
+    lefteyes = leCascade.detectMultiScale(bin, scaleFactor=1.05, minNeighbors=10, minSize=(1, 20), flags=cv2.CASCADE_SCALE_IMAGE)
+    
+    righteyes = reCascade.detectMultiScale(bin, scaleFactor=1.05, minNeighbors=10, minSize=(1, 20), flags=cv2.CASCADE_SCALE_IMAGE)
+
+    # Si des yeux sont détectés, réinitialiser la minuterie
+    if len(lefteyes) > 0 or len(righteyes) > 0:
+        last_eye_detection_time = time.time()
+
+
+    if time.time() - last_eye_detection_time >= no_eye_detection_timeout:
+        cube_size = 100
+        cube_color = (0, 0, 255)
+        frame_height, frame_width, _ = frame.shape
+        cube_x = (frame_width - cube_size) // 2
+        cube_y = (frame_height - cube_size) // 2
+        cv2.rectangle(frame, (cube_x, cube_y), (cube_x + cube_size, cube_y + cube_size), cube_color, -1)
+
+
+
+    for (x, y, w, h) in lefteyes:
+        cv2.rectangle(frame, (x, y), (x + w, y + h), (0, 0, 255), 2)
+
+    for (x, y, w, h) in righteyes:
+        cv2.rectangle(frame, (x, y), (x + w, y + h), (255, 0, 0), 2)
+
+    cv2.imshow('video', frame)
+
+    key = cv2.waitKey(1)
+    if key == 27:
+        break
+
+image.release()
+cv2.destroyAllWindows()
